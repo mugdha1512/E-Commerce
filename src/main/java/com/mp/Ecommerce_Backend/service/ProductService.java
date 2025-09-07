@@ -4,14 +4,12 @@ import com.mp.Ecommerce_Backend.exception.ProductException;
 import com.mp.Ecommerce_Backend.model.Product;
 import com.mp.Ecommerce_Backend.request.CreateProductRequest;
 import org.springframework.data.domain.Page;
-
 import java.util.List;
 
 public interface ProductService {
 
     Product createProduct(Product product);
 
-    // NEW ADDED: Overloaded for CreateProductRequest
     Product createProduct(CreateProductRequest request);
 
     String deleteProduct(Long productId) throws ProductException;
@@ -35,6 +33,5 @@ public interface ProductService {
             Integer pageSize
     );
 
-    // NEW ADDED: Get all products
     List<Product> findAllProducts();
 }

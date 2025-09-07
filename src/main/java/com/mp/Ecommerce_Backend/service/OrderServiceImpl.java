@@ -1,74 +1,140 @@
 package com.mp.Ecommerce_Backend.service;
 
 import com.mp.Ecommerce_Backend.exception.OrderException;
-import com.mp.Ecommerce_Backend.model.Address;
-import com.mp.Ecommerce_Backend.model.Order;
-import com.mp.Ecommerce_Backend.model.User;
-import com.mp.Ecommerce_Backend.repository.CartRepository;
+import com.mp.Ecommerce_Backend.model.*;
+import com.mp.Ecommerce_Backend.repository.AddressRepository;
+import com.mp.Ecommerce_Backend.repository.OrderRepository;
+import com.mp.Ecommerce_Backend.repository.UserRepository;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
 public class OrderServiceImpl implements OrderService {
 
-    private CartRepository cartRepository;
-    private CartService cartService;
-    private ProductService productService;
+    private final OrderRepository orderRepository;
+    private final CartService cartService;
+    private final AddressRepository addressRepository;
+    private final UserRepository userRepository;
 
-    public OrderServiceImpl(CartRepository cartRepository, CartService cartService, ProductService productService) {
-        this.cartRepository = cartRepository;
+    public OrderServiceImpl(OrderRepository orderRepository,
+                            CartService cartService,
+                            AddressRepository addressRepository,
+                            UserRepository userRepository) {
+        this.orderRepository = orderRepository;
         this.cartService = cartService;
-        this.productService = productService;
+        this.addressRepository = addressRepository;
+        this.userRepository = userRepository;
     }
 
     @Override
-    public Order createOrder(User user, Address shippingAddress) {
-        return null;
-    }
+    public Order createOrder(User user, Address shippAddress) {
+        // Save shipping address and link to user
+        shippAddress.setUser(user);
+        Address savedAddress = addressRepository.save(shippAddress);
 
-    @Override
-    public Order findOrderById(Long orderId) throws OrderException {
-        return null;
-    }
+        user.getAddress().add(savedAddress);
+        userRepository.save(user);
 
-    @Override
-    public List<Order> usersOrderHistory(Long userId) {
-        return List.of();
+        // Fetch user's cart and prepare order items list
+        Cart cart = cartService.findUserCart(user.getId());
+        List<OrderItem> orderItems = new ArrayList<>();
+
+        for (CartItem cartItem : cart.getCartItems()) {
+            OrderItem orderItem = new OrderItem();
+            orderItem.setProduct(cartItem.getProduct());
+            orderItem.setQuantity(cartItem.getQuantity());
+            orderItem.setSize(cartItem.getSize());
+            orderItem.setPrice(cartItem.getPrice());
+            orderItem.setDiscountedPrice(cartItem.getDiscountedPrice());
+            orderItem.setUserId(cartItem.getUserid());
+
+            orderItems.add(orderItem);
+        }
+
+        // Create order and set properties
+        Order order = new Order();
+        order.setUser(user);
+        order.setShippingAddress(savedAddress);
+        order.setOrderDate(LocalDateTime.now());
+        order.setCreatedAt(LocalDateTime.now());
+        order.setOrderStatus("PENDING");
+        order.getPaymentDetails().setStatus("PENDING");
+
+        order.setTotalPrice(cart.getTotalPrice());
+        order.setTotalItem(cart.getTotalItem());
+        order.setDiscount(cart.getDicsount());
+        order.setTotalDiscountedPrice(cart.getTotalDiscountedPrice());
+
+        // Link each order item to order before saving
+        for (OrderItem item : orderItems) {
+            item.setOrder(order);
+        }
+        order.setOrderItems(orderItems);
+
+        // Save order (cascades and saves orderItems)
+        Order savedOrder = orderRepository.save(order);
+
+        return savedOrder;
     }
 
     @Override
     public Order placedOrder(Long orderId) throws OrderException {
-        return null;
+        Order order = findOrderById(orderId);
+        order.setOrderStatus("PLACED");
+        order.getPaymentDetails().setStatus("COMPLETED");
+        return orderRepository.save(order);
     }
 
     @Override
     public Order confirmedOrder(Long orderId) throws OrderException {
-        return null;
+        Order order = findOrderById(orderId);
+        order.setOrderStatus("CONFIRMED");
+        return orderRepository.save(order);
     }
 
     @Override
     public Order shippedOrder(Long orderId) throws OrderException {
-        return null;
+        Order order = findOrderById(orderId);
+        order.setOrderStatus("SHIPPED");
+        return orderRepository.save(order);
     }
 
     @Override
     public Order deliveredOrder(Long orderId) throws OrderException {
-        return null;
+        Order order = findOrderById(orderId);
+        order.setOrderStatus("DELIVERED");
+        return orderRepository.save(order);
     }
 
     @Override
-    public Order canceledOrder(Long orderId) throws OrderException {
-        return null;
+    public Order cancelOrder(Long orderId) throws OrderException {
+        Order order = findOrderById(orderId);
+        order.setOrderStatus("CANCELED");
+        return orderRepository.save(order);
     }
 
     @Override
-    public List<Order> getAllOrders() {
-        return List.of();
+    public Order findOrderById(Long orderId) throws OrderException {
+        return orderRepository.findById(orderId).orElseThrow(
+                () -> new OrderException("Order not found with id " + orderId));
+    }
+
+    @Override
+    public List usersOrderHistory(Long userId) {
+        return orderRepository.getUsersOrders(userId);
+    }
+
+    @Override
+    public List getAllOrders() {
+        return orderRepository.findAll();
     }
 
     @Override
     public void deleteOrder(Long orderId) throws OrderException {
-
+        Order order = findOrderById(orderId);
+        orderRepository.delete(order);
     }
 }

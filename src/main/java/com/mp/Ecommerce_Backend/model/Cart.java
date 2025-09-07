@@ -1,7 +1,6 @@
 package com.mp.Ecommerce_Backend.model;
 
 import jakarta.persistence.*;
-
 import java.util.HashSet;
 import java.util.Set;
 
@@ -12,19 +11,16 @@ public class Cart {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
-
     @OneToMany(mappedBy = "cart", cascade = CascadeType.ALL, orphanRemoval = true)
-    @Column(name ="cart_items")
+    @Column(name = "cart_items")
     private Set<CartItem> cartItems = new HashSet<>();
 
     @Column(name = "total_price")
     private double totalPrice;
-
 
     @Column(name = "total_item")
     private int totalItem;
@@ -32,6 +28,9 @@ public class Cart {
     private int totalDiscountedPrice;
 
     private int dicsount;
+
+    public Cart() {
+    }
 
     public Long getId() {
         return id;
@@ -87,8 +86,5 @@ public class Cart {
 
     public void setDicsount(int dicsount) {
         this.dicsount = dicsount;
-    }
-
-    public Cart() {
     }
 }

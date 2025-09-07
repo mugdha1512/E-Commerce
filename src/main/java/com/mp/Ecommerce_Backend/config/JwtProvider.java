@@ -1,4 +1,5 @@
 package com.mp.Ecommerce_Backend.config;
+
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
@@ -14,21 +15,32 @@ public class JwtProvider {
     SecretKey key = Keys.hmacShaKeyFor(JwtConstant.SECRET_KEY.getBytes());
 
     public String generateToken(Authentication auth) {
-        String jwt = Jwts.builder()
+        return Jwts.builder()
                 .setIssuedAt(new Date())
-                .setExpiration(new Date(new Date().getTime() + 864000000))
+                .setExpiration(new Date(System.currentTimeMillis() + 864000000))
                 .claim("email", auth.getName())
-                .signWith(key).compact();
-        return jwt;
+                .signWith(key)
+                .compact();
+    }
+
+    private String cleanTokenString(String token) {
+        if (token == null) return null;
+        token = token.replaceAll("[\\x00-\\x08\\x0B\\x0C\\x0E-\\x1F]", ""); // remove illegal/control chars
+        token = token.replaceAll("\\s", ""); // remove whitespace
+        return token;
     }
 
     public String getEmailFromToken(String jwt) {
-        // Do NOT remove prefix here - expect raw token only
-        SecretKey key = Keys.hmacShaKeyFor(JwtConstant.SECRET_KEY.getBytes());
-        Claims claims = Jwts.parser().setSigningKey(key).build().parseClaimsJws(jwt).getBody();
-        String email = String.valueOf(claims.get("email"));
-        return email;
+        try {
+            String cleanJwt = cleanTokenString(jwt);
+            Claims claims = Jwts.parser()              // << ONLY FOR 0.11+ (including 0.13)
+                    .setSigningKey(key)
+                    .build()
+                    .parseClaimsJws(cleanJwt)
+                    .getBody();
+            return claims.get("email", String.class);
+        } catch (Exception e) {
+            throw new RuntimeException("Invalid JWT token: " + e.getMessage());
+        }
     }
-
-
 }

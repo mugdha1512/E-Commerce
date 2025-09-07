@@ -21,6 +21,13 @@ import java.util.List;
 
 public class JwtValidator extends OncePerRequestFilter {
 
+    private String cleanTokenString(String token) {
+        if (token == null) return null;
+        token = token.replaceAll("[\\x00-\\x08\\x0B\\x0C\\x0E-\\x1F]", "");
+        token = token.replaceAll("\\s", "");
+        return token;
+    }
+
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
@@ -29,6 +36,7 @@ public class JwtValidator extends OncePerRequestFilter {
 
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
             String jwt = authHeader.substring(7);
+            jwt = cleanTokenString(jwt);
 
             try {
                 SecretKey key = Keys.hmacShaKeyFor(JwtConstant.SECRET_KEY.getBytes());
@@ -39,12 +47,8 @@ public class JwtValidator extends OncePerRequestFilter {
                         .parseClaimsJws(jwt)
                         .getBody();
 
-                System.out.println("JWT parsed claims: " + claims);
-
                 String email = claims.get("email", String.class);
 
-                // If you have authorities as claims, extract them here
-                // Otherwise, assign default role
                 List<SimpleGrantedAuthority> authorities = Collections.singletonList(new SimpleGrantedAuthority("ROLE_USER"));
 
                 Authentication authentication =
@@ -53,12 +57,8 @@ public class JwtValidator extends OncePerRequestFilter {
                 SecurityContextHolder.getContext().setAuthentication(authentication);
 
             } catch (Exception e) {
-                System.err.println("JWT validation failed: " + e.getMessage());
                 throw new BadCredentialsException("Invalid token received from jwt validator");
             }
-        } else {
-            // Optionally log missing/invalid Authorization header
-            System.out.println("No JWT token found in request headers or does not start with Bearer");
         }
 
         filterChain.doFilter(request, response);

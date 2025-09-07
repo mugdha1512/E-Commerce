@@ -23,11 +23,9 @@ public class ProductServiceImpl implements ProductService {
     private final UserService userService;
     private final CategoryRepository categoryRepository;
 
-    public ProductServiceImpl(
-            ProductRepository productRepository,
-            UserService userService,
-            CategoryRepository categoryRepository
-    ) {
+    public ProductServiceImpl(ProductRepository productRepository,
+                              UserService userService,
+                              CategoryRepository categoryRepository) {
         this.productRepository = productRepository;
         this.userService = userService;
         this.categoryRepository = categoryRepository;
@@ -36,14 +34,11 @@ public class ProductServiceImpl implements ProductService {
     @Override
     public Product createProduct(Product product) {
         Category toAssign = null;
-
         if (product.getCategory() != null) {
             String lookupName = product.getCategory().getParentCategory() != null
                     ? product.getCategory().getParentCategory().getName()
                     : product.getCategory().getName();
-
             Category existingTop = categoryRepository.findByName(lookupName);
-
             if (existingTop == null) {
                 Category topLevelCategory = new Category();
                 topLevelCategory.setName(product.getCategory().getName());
@@ -51,11 +46,9 @@ public class ProductServiceImpl implements ProductService {
                 existingTop = categoryRepository.save(topLevelCategory);
             }
             toAssign = product.getCategory() != null ? product.getCategory() : existingTop;
+            product.setCategory(toAssign);
         }
-
-        product.setCategory(toAssign);
         product.setCreatedAt(LocalDateTime.now());
-
         return productRepository.save(product);
     }
 
@@ -81,38 +74,35 @@ public class ProductServiceImpl implements ProductService {
                 topLevel.setLevel(1);
                 topLevel = categoryRepository.save(topLevel);
             }
-        }
 
-        Category secondLevel = null;
-        if (request.getSecondLevelCategory() != null && !request.getSecondLevelCategory().isBlank()) {
-            secondLevel = categoryRepository.findByName(request.getSecondLevelCategory());
-            if (secondLevel == null) {
-                secondLevel = new Category();
-                secondLevel.setName(request.getSecondLevelCategory());
-                secondLevel.setParentCategory(topLevel);
-                secondLevel.setLevel(2);
-                secondLevel = categoryRepository.save(secondLevel);
+            Category secondLevel = null;
+            if (request.getSecondLevelCategory() != null && !request.getSecondLevelCategory().isBlank()) {
+                secondLevel = categoryRepository.findByName(request.getSecondLevelCategory());
+                if (secondLevel == null) {
+                    secondLevel = new Category();
+                    secondLevel.setName(request.getSecondLevelCategory());
+                    secondLevel.setParentCategory(topLevel);
+                    secondLevel.setLevel(2);
+                    secondLevel = categoryRepository.save(secondLevel);
+                }
+
+                Category thirdLevel = null;
+                if (request.getThirdLevelCategory() != null && !request.getThirdLevelCategory().isBlank()) {
+                    thirdLevel = categoryRepository.findByName(request.getThirdLevelCategory());
+                    if (thirdLevel == null) {
+                        thirdLevel = new Category();
+                        thirdLevel.setName(request.getThirdLevelCategory());
+                        thirdLevel.setParentCategory(secondLevel != null ? secondLevel : topLevel);
+                        thirdLevel.setLevel(3);
+                        thirdLevel = categoryRepository.save(thirdLevel);
+                    }
+                    product.setCategory(thirdLevel);
+                } else {
+                    product.setCategory(secondLevel);
+                }
+            } else {
+                product.setCategory(topLevel);
             }
-        }
-
-        Category thirdLevel = null;
-        if (request.getThirdLevelCategory() != null && !request.getThirdLevelCategory().isBlank()) {
-            thirdLevel = categoryRepository.findByName(request.getThirdLevelCategory());
-            if (thirdLevel == null) {
-                thirdLevel = new Category();
-                thirdLevel.setName(request.getThirdLevelCategory());
-                thirdLevel.setParentCategory(secondLevel != null ? secondLevel : topLevel);
-                thirdLevel.setLevel(3);
-                thirdLevel = categoryRepository.save(thirdLevel);
-            }
-        }
-
-        if (thirdLevel != null) {
-            product.setCategory(thirdLevel);
-        } else if (secondLevel != null) {
-            product.setCategory(secondLevel);
-        } else if (topLevel != null) {
-            product.setCategory(topLevel);
         }
 
         product.setCreatedAt(LocalDateTime.now());
@@ -129,53 +119,29 @@ public class ProductServiceImpl implements ProductService {
     @Override
     public Product updateProduct(Long productId, Product req) throws ProductException {
         Product product = findProductById(productId);
-
-        if (req.getQuantity() > 0) {
-            product.setQuantity(req.getQuantity());
-        }
-        if (req.getPrice() > 0) {
-            product.setPrice(req.getPrice());
-        }
-        if (req.getDiscountPercent() >= 0) {
-            product.setDiscountPercent(req.getDiscountPercent());
-        }
-        if (req.getDiscountedPrice() >= 0) {
-            product.setDiscountedPrice(req.getDiscountedPrice());
-        }
-        if (req.getTitle() != null) {
-            product.setTitle(req.getTitle());
-        }
-        if (req.getDescription() != null) {
-            product.setDescription(req.getDescription());
-        }
-        if (req.getBrand() != null) {
-            product.setBrand(req.getBrand());
-        }
-        if (req.getColor() != null) {
-            product.setColor(req.getColor());
-        }
-        if (req.getImageUrl() != null) {
-            product.setImageUrl(req.getImageUrl());
-        }
-        if (req.getCategory() != null) {
-            product.setCategory(req.getCategory());
-        }
-
+        if (req.getQuantity() > 0) product.setQuantity(req.getQuantity());
+        if (req.getPrice() > 0) product.setPrice(req.getPrice());
+        if (req.getDiscountPercent() != null && req.getDiscountPercent() >= 0) product.setDiscountPercent(req.getDiscountPercent());
+        if (req.getDiscountedPrice() >= 0) product.setDiscountedPrice(req.getDiscountedPrice());
+        if (req.getTitle() != null) product.setTitle(req.getTitle());
+        if (req.getDescription() != null) product.setDescription(req.getDescription());
+        if (req.getBrand() != null) product.setBrand(req.getBrand());
+        if (req.getColor() != null) product.setColor(req.getColor());
+        if (req.getImageUrl() != null) product.setImageUrl(req.getImageUrl());
+        if (req.getCategory() != null) product.setCategory(req.getCategory());
         return productRepository.save(product);
     }
 
     @Override
     public Product findProductById(Long id) throws ProductException {
-        return productRepository.findById(id)
-                .orElseThrow(() -> new ProductException("Product not found with id - " + id));
+        return productRepository.findById(id).orElseThrow(() -> new ProductException("Product not found with id - " + id));
     }
 
     @Override
     public List<Product> findProductByCategory(String category) {
         return productRepository.findAll().stream()
-                .filter(p -> p.getCategory() != null &&
-                        p.getCategory().getName() != null &&
-                        p.getCategory().getName().equalsIgnoreCase(category))
+                .filter(p -> p.getCategory() != null && p.getCategory().getName() != null
+                        && p.getCategory().getName().equalsIgnoreCase(category))
                 .collect(Collectors.toList());
     }
 
@@ -190,15 +156,17 @@ public class ProductServiceImpl implements ProductService {
             String sort,
             String stock,
             Integer pageNumber,
-            Integer pageSize
-    ) {
+            Integer pageSize) {
+
         Pageable pageable = PageRequest.of(pageNumber, pageSize);
 
         List<String> filteredColors = (colors == null || colors.isEmpty() || colors.stream().allMatch(String::isBlank))
-                ? null : colors.stream().map(String::toLowerCase).collect(Collectors.toList());
+                ? null : colors.stream().map(String::toLowerCase).map(String::trim).collect(Collectors.toList());
 
         List<String> filteredSizes = (sizes == null || sizes.isEmpty() || sizes.stream().allMatch(String::isBlank))
-                ? null : sizes.stream().map(String::toLowerCase).collect(Collectors.toList());
+                ? null : sizes.stream().map(String::toLowerCase).map(String::trim).collect(Collectors.toList());
+
+        if (category != null && category.isBlank()) category = null;
 
         List<Product> products = productRepository.filterProducts(
                 category,
@@ -207,10 +175,9 @@ public class ProductServiceImpl implements ProductService {
                 minDiscount,
                 sort,
                 filteredColors,
-                filteredSizes
-        );
+                filteredSizes);
 
-        if (stock != null) {
+        if (stock != null && !stock.isBlank()) {
             if (stock.equalsIgnoreCase("in_stock")) {
                 products = products.stream()
                         .filter(p -> p.getQuantity() > 0)
@@ -224,13 +191,15 @@ public class ProductServiceImpl implements ProductService {
 
         int startIndex = (int) pageable.getOffset();
         int endIndex = Math.min(startIndex + pageable.getPageSize(), products.size());
+        if (startIndex > endIndex) startIndex = 0;
 
         List<Product> pageContent = products.subList(startIndex, endIndex);
+
         return new PageImpl<>(pageContent, pageable, products.size());
     }
+
     @Override
     public List<Product> findAllProducts() {
         return productRepository.findAll();
     }
-
 }

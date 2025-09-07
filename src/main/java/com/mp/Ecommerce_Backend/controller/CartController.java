@@ -9,17 +9,13 @@ import com.mp.Ecommerce_Backend.response.ApiResponse;
 import com.mp.Ecommerce_Backend.service.CartService;
 import com.mp.Ecommerce_Backend.service.UserService;
 
-//import io.swagger.v3.oas.annotations.Operation;
-//import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-
 @RestController
 @RequestMapping("/api/cart")
-//@Tag(name = "Cart Management", description = "Find user cart, add item to cart")
 public class CartController {
 
     @Autowired
@@ -29,21 +25,19 @@ public class CartController {
     private UserService userService;
 
     @GetMapping("/")
-   // @Operation(description = "Find cart by user id")
-    public ResponseEntity<Cart> findUserCart(@RequestHeader("Authorization") String jwt) throws UserException {
-        User user = userService.findUserProfileByJwt(jwt);
+    public ResponseEntity<Cart> findUserCart(@RequestHeader("Authorization") String authorizationHeader) throws UserException {
+        String token = extractToken(authorizationHeader);
+        User user = userService.findUserProfileByJwt(token);
         Cart cart = cartService.findUserCart(user.getId());
-
         return new ResponseEntity<>(cart, HttpStatus.OK);
     }
 
     @PutMapping("/add")
-   // @Operation(description = "Add item to cart")
     public ResponseEntity<ApiResponse> addItemToCart(@RequestBody AddItemRequest req,
-                                                     @RequestHeader("Authorization") String jwt)
+                                                     @RequestHeader("Authorization") String authorizationHeader)
             throws UserException, ProductException {
-
-        User user = userService.findUserProfileByJwt(jwt);
+        String token = extractToken(authorizationHeader);
+        User user = userService.findUserProfileByJwt(token);
         cartService.addCartItem(user.getId(), req);
 
         ApiResponse res = new ApiResponse();
@@ -51,5 +45,17 @@ public class CartController {
         res.setStatus(true);
 
         return new ResponseEntity<>(res, HttpStatus.OK);
+    }
+
+    // Helper method to extract and clean JWT token from Authorization header
+    private String extractToken(String authorizationHeader) {
+        if (authorizationHeader == null) {
+            return null;
+        }
+        // Remove Bearer prefix if present and trim whitespace
+        if (authorizationHeader.startsWith("Bearer ")) {
+            return authorizationHeader.substring(7).trim();
+        }
+        return authorizationHeader.trim();
     }
 }

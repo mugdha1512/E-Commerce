@@ -12,7 +12,7 @@ public class CartItem {
 
     @ManyToOne
     @JsonIgnore
-    private  Cart cart;
+    private Cart cart;
 
     @ManyToOne
     private Product product;

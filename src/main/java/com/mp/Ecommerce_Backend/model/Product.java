@@ -26,7 +26,7 @@ public class Product {
     private int discountedPrice;
 
     @Column(name = "discount_percent")
-    private Integer discountPercent; // allows null
+    private Integer discountPercent;
 
     @Column(name = "quantity")
     private int quantity;
@@ -37,7 +37,6 @@ public class Product {
     @Column(name = "color")
     private String color;
 
-    // Sizes stored as set of strings representing size names
     @ElementCollection
     @CollectionTable(name = "product_sizes", joinColumns = @JoinColumn(name = "product_id"))
     @Column(name = "size")
@@ -46,11 +45,9 @@ public class Product {
     @Column(name = "image_url")
     private String imageUrl;
 
-    // Generic type added for Hibernate mapping
     @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Rating> ratings = new ArrayList<>();
 
-    // Generic type added for Hibernate mapping
     @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Review> reviews = new ArrayList<>();
 
@@ -63,7 +60,6 @@ public class Product {
     private Category category;
 
     private LocalDateTime createdAt;
-
     // ===== Constructors =====
 
     public Product() {}

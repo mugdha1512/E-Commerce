@@ -33,14 +33,19 @@ public class CartServiceImpl implements CartService {
     public String addCartItem(Long userId, AddItemRequest req) throws ProductException {
         Cart cart = cartRepository.findByUserId(userId);
 
-        // If cart does not exist, create one with a new User object
         if (cart == null) {
-            User user = new User();   // ✅ create empty user
-            user.setId(userId);       // ✅ just set the id
+            User user = new User();
+            user.setId(userId);
             cart = createCart(user);
         }
 
         Product product = productService.findProductById(req.getProductId());
+
+        // If quantity is null or less than 1, set default quantity to 1
+        Integer quantity = req.getQuantity();
+        if (quantity == null || quantity < 1) {
+            quantity = 1;
+        }
 
         CartItem isPresent = cartItemService.isCartItemExist(cart, product, req.getSize(), userId);
 
@@ -48,15 +53,15 @@ public class CartServiceImpl implements CartService {
             CartItem cartItem = new CartItem();
             cartItem.setProduct(product);
             cartItem.setCart(cart);
-            cartItem.setQuantity(req.getQuantity());
+            cartItem.setQuantity(quantity);
             cartItem.setUserid(userId);
 
-            int price = req.getQuantity() * product.getDiscountedPrice();
+            int price = quantity * product.getDiscountedPrice();
             cartItem.setPrice(price);
             cartItem.setSize(req.getSize());
 
-            CartItem createdcartItem = cartItemService.createCartItem(cartItem);
-            cart.getCartItems().add(createdcartItem);
+            CartItem createdCartItem = cartItemService.createCartItem(cartItem);
+            cart.getCartItems().add(createdCartItem);
         }
         return "Item Added To Cart";
     }

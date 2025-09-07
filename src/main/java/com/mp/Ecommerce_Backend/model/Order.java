@@ -1,19 +1,19 @@
 package com.mp.Ecommerce_Backend.model;
 
 import jakarta.persistence.*;
+
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
 @Entity
-@Table(name = "`order`") // Escape reserved keyword with backticks
+@Table(name = "orders")
 public class Order {
-
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     private Long id;
 
-    @Column(name="order_id")
+    @Column(name = "order_id")
     private String orderId;
 
     @ManyToOne
@@ -33,16 +33,31 @@ public class Order {
     private PaymentDetails paymentDetails = new PaymentDetails();
 
     private double totalPrice;
-
     private Integer totalDiscountedPrice;
-
     private Integer discount;
-
     private String orderStatus;
-
     private int totalItem;
+    private LocalDateTime createdAt;
 
-    private LocalDateTime cretedAt;
+    public Order() {
+    }
+
+    public Order(Long id, String orderId, User user, List<OrderItem> orderItems, LocalDateTime orderDate, LocalDateTime deliveryDate, Address shippingAddress, PaymentDetails paymentDetails, double totalPrice, Integer totalDiscountedPrice, Integer discount, String orderStatus, int totalItem, LocalDateTime createdAt) {
+        this.id = id;
+        this.orderId = orderId;
+        this.user = user;
+        this.orderItems = orderItems;
+        this.orderDate = orderDate;
+        this.deliveryDate = deliveryDate;
+        this.shippingAddress = shippingAddress;
+        this.paymentDetails = paymentDetails;
+        this.totalPrice = totalPrice;
+        this.totalDiscountedPrice = totalDiscountedPrice;
+        this.discount = discount;
+        this.orderStatus = orderStatus;
+        this.totalItem = totalItem;
+        this.createdAt = createdAt;
+    }
 
     public Long getId() {
         return id;
@@ -148,12 +163,11 @@ public class Order {
         this.totalItem = totalItem;
     }
 
-    public LocalDateTime getCretedAt() {
-        return cretedAt;
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
     }
 
-    public void setCretedAt(LocalDateTime cretedAt) {
-        this.cretedAt = cretedAt;
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
     }
-
 }

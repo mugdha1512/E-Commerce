@@ -25,28 +25,47 @@ public class OrderController {
     private UserService userService;
 
     @PostMapping("/")
-    public ResponseEntity<Order>createOrder(@RequestBody Address shippingAddress,
-                                            @RequestHeader("Authorization") String jwt)throws UserException{
+    public ResponseEntity<Order> createOrder(@RequestBody Address shippingAddress,
+                                             @RequestHeader("Authorization") String authHeader) throws UserException {
+        String jwt = null;
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            jwt = authHeader.substring(7); // Strip "Bearer " prefix
+        } else {
+            jwt = authHeader;
+        }
+
         User user = userService.findUserProfileByJwt(jwt);
 
         Order order = orderService.createOrder(user, shippingAddress);
 
-        System.out.println("order"+order);
+        System.out.println("order" + order);
         return new ResponseEntity<Order>(order, HttpStatus.CREATED);
     }
 
     @GetMapping("/user")
-    public ResponseEntity<List<Order>>usersOrderHistory(
-            @RequestHeader("Authorization") String jwt) throws UserException{
+    public ResponseEntity<List<Order>> usersOrderHistory(
+            @RequestHeader("Authorization") String authHeader) throws UserException {
+        String jwt = null;
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            jwt = authHeader.substring(7); // Strip "Bearer " prefix
+        } else {
+            jwt = authHeader;
+        }
         User user = userService.findUserProfileByJwt(jwt);
         List<Order> orders = orderService.usersOrderHistory(user.getId());
         return new ResponseEntity<>(orders, HttpStatus.CREATED);
     }
 
-    @GetMapping("/{id}")
+    @GetMapping("/{Id}")
     public ResponseEntity<Order> findOrderById(
-            @PathVariable("id") Long orderId,
-            @RequestHeader("Authorization") String jwt)throws UserException, OrderException{
+            @PathVariable("Id") Long orderId,
+            @RequestHeader("Authorization") String authHeader) throws UserException, OrderException {
+        String jwt = null;
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            jwt = authHeader.substring(7); // Strip "Bearer " prefix
+        } else {
+            jwt = authHeader;
+        }
         User user = userService.findUserProfileByJwt(jwt);
         Order order = orderService.findOrderById(orderId);
 
