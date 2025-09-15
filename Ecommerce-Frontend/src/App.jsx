@@ -20,9 +20,7 @@ function App() {
 
           <Route path='/*' element={<CustomerRouters/>}>
           </Route>
-
-
-
+        
         </Routes>
 
        

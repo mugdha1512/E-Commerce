@@ -14,7 +14,7 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 
 import java.util.Arrays;
-import java.util.Collections;
+import java.util.List;
 
 @Configuration
 public class AppConfig {
@@ -31,14 +31,23 @@ public class AppConfig {
                     @Override
                     public CorsConfiguration getCorsConfiguration(HttpServletRequest request) {
                         CorsConfiguration cfg = new CorsConfiguration();
+
+                        // Allowed frontends/sites
                         cfg.setAllowedOrigins(Arrays.asList(
                                 "http://localhost:5173",
                                 "http://localhost:4200"
                         ));
-                        cfg.setAllowedMethods(Collections.singletonList("*"));
-                        cfg.setAllowCredentials(true);
-                        cfg.setAllowedHeaders(Collections.singletonList("*"));
+
+                        // Explicitly allowed HTTP methods
+                        cfg.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "HEAD", "OPTIONS"));
+
+                        // Explicitly allowed headers sent by client
+                        cfg.setAllowedHeaders(Arrays.asList("Authorization", "Cache-Control", "Content-Type", "Accept"));
+
+                        // Headers exposed to client
                         cfg.setExposedHeaders(Arrays.asList("Authorization"));
+
+                        cfg.setAllowCredentials(true);
                         cfg.setMaxAge(3600L);
                         return cfg;
                     }
